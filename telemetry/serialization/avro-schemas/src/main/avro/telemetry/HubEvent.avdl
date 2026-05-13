@@ -1,6 +1,6 @@
 @namespace("ru.yandex.practicum.kafka.telemetry.event")
 protocol HubEventProtocol {
-    import idl "dataTypes.avdl";
+    import idl "DataTypes.avdl";
 
     //Запись, описывающая событие добавления устройства.
     record DeviceAddedEventAvro {
