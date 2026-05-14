@@ -1,4 +1,49 @@
 @namespace("ru.yandex.practicum.kafka.telemetry.event")
 protocol HubEventProtocol {
+    import idl "DataTypes.avdl";
 
+    //Запись, описывающая событие добавления устройства.
+    record DeviceAddedEventAvro {
+        string id;
+        DeviceTypeAvro type;
+    }
+
+    //Запись, описывающая событие удаления устройства.
+    record DeviceRemovedEventAvro {
+        string id;
+    }
+
+    //Запись, описывающая условия активации сценария.
+    record ScenarioConditionAvro {
+        string sensor_id;
+        ConditionTypeAvro type;
+        ConditionOperationAvro operation;
+        union { null, int, boolean } value = null;
+    }
+
+    //Запись, описывающая действия, выполняемые устройством в рамках сценария.
+    record DeviceActionAvro {
+        string sensor_id;
+        ActionTypeAvro type;
+        union { null, int } value = null;
+    }
+
+    //Запись, описывающая событие добавления сценария.
+    record ScenarioAddedEventAvro {
+        string name;
+        array<ScenarioConditionAvro> conditions;
+        array<DeviceActionAvro> actions;
+    }
+
+    //Запись, описывающая событие удаления сценария.
+    record ScenarioRemovedEventAvro {
+        string name;
+    }
+
+    //Запись, описывающая событие, происходящее в хабе.
+    record HubEventAvro {
+        string hub_id;
+        timestamp_ms timestamp;
+        union { DeviceAddedEventAvro, DeviceRemovedEventAvro, ScenarioAddedEventAvro, ScenarioRemovedEventAvro } payload;
+    }
 }
