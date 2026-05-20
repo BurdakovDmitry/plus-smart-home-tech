@@ -1,11 +1,10 @@
 package collector.client;
 
-import collector.serialiser.CollectorAvroSerializer;
 import jakarta.annotation.PreDestroy;
-import org.apache.avro.specific.SpecificRecordBase;
 import org.apache.kafka.clients.producer.KafkaProducer;
 import org.apache.kafka.clients.producer.Producer;
 import org.apache.kafka.clients.producer.ProducerConfig;
+import org.apache.kafka.common.serialization.ByteArraySerializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
@@ -15,12 +14,12 @@ import java.util.Properties;
 @Configuration
 public class CollectorClientConfiguration {
     @Bean
-    CollectorClient getClient() {
+    public CollectorClient getClient() {
         return new CollectorClient() {
-            private Producer<String, SpecificRecordBase> producer;
+            private Producer<String, byte[]> producer;
 
             @Override
-            public Producer<String, SpecificRecordBase> getProducer() {
+            public Producer<String, byte[]> getProducer() {
                 if (producer == null) {
                     initProducer();
                 }
@@ -31,7 +30,7 @@ public class CollectorClientConfiguration {
                 Properties config = new Properties();
                 config.put(ProducerConfig.BOOTSTRAP_SERVERS_CONFIG, "localhost:9092");
                 config.put(ProducerConfig.KEY_SERIALIZER_CLASS_CONFIG, StringSerializer.class);
-                config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, CollectorAvroSerializer.class);
+                config.put(ProducerConfig.VALUE_SERIALIZER_CLASS_CONFIG, ByteArraySerializer.class);
 
                 producer = new KafkaProducer<>(config);
             }

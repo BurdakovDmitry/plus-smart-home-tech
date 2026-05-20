@@ -6,7 +6,7 @@ import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;
 import collector.model.enums.DeviceEventType;
-import ru.yandex.practicum.kafka.telemetry.event.DeviceTypeAvro;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceTypeProto;
 
 @Getter
 @Setter
@@ -16,7 +16,7 @@ public class DeviceAddedEvent extends HubEvent {
     private String id;
 
     @NotNull
-    private DeviceTypeAvro deviceType;
+    private DeviceTypeProto deviceType;
 
     @Override
     public DeviceEventType getType() {
