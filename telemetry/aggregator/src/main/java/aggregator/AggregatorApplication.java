@@ -1,13 +1,9 @@
 package aggregator;
 
-import collector.client.CollectorClientConfiguration;
-import collector.serialiser.CollectorAvroSerializer;
 import org.springframework.boot.SpringApplication;
 import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.ConfigurationPropertiesScan;
 import org.springframework.context.ConfigurableApplicationContext;
-import org.springframework.context.annotation.Import;
-
 /**
  * Главный класс сервиса AggregatorApplication.
  */
@@ -16,7 +12,6 @@ import org.springframework.context.annotation.Import;
         "net.devh.boot.grpc.server.autoconfigure.GrpcServerFactoryAutoConfiguration"
 })
 @ConfigurationPropertiesScan
-@Import({CollectorClientConfiguration.class, CollectorAvroSerializer.class})
 public class AggregatorApplication {
 
     public static void main(String[] args) {

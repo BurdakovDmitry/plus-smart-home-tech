@@ -1,4 +1,4 @@
-package collector.serialiser;
+package aggregator.serializer;
 
 import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryDecoder;

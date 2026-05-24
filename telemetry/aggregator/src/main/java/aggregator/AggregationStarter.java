@@ -1,8 +1,7 @@
 package aggregator;
 
-import collector.client.CollectorClient;
-import collector.model.CollectorTopics;
-import collector.serialiser.CollectorAvroSerializer;
+import aggregator.client.AggregatorClient;
+import aggregator.serializer.AggregatorAvroSerializer;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.apache.kafka.clients.consumer.Consumer;
@@ -23,9 +22,11 @@ import java.util.Optional;
 @Component
 @RequiredArgsConstructor
 public class AggregationStarter {
-    private final CollectorClient client;
-    private final CollectorAvroSerializer avroSerializer;
+    private final AggregatorClient client;
+    private final AggregatorAvroSerializer avroSerializer;
     private final SnapshotAggregator aggregator;
+    private final String TELEMETRY_SNAPSHOTS_V1_TOPIC = "telemetry.snapshots.v1";
+    private final String TELEMETRY_SENSORS_V1_TOPIC = "telemetry.sensors.v1";
 
     public void start() {
         Consumer<String, SensorEventAvro> consumer = client.getConsumer();
@@ -34,8 +35,8 @@ public class AggregationStarter {
         Runtime.getRuntime().addShutdownHook(new Thread(consumer::wakeup));
 
         try {
-            log.info("Подписываемся на топик: {}", CollectorTopics.TELEMETRY_SENSORS_V1_TOPIC);
-            consumer.subscribe(List.of(CollectorTopics.TELEMETRY_SENSORS_V1_TOPIC));
+            log.info("Подписываемся на топик: {}", TELEMETRY_SENSORS_V1_TOPIC);
+            consumer.subscribe(List.of(TELEMETRY_SENSORS_V1_TOPIC));
 
             while (!Thread.currentThread().isInterrupted()) {
                 ConsumerRecords<String, SensorEventAvro> records = consumer.poll(Duration.ofMillis(1000));
@@ -46,10 +47,10 @@ public class AggregationStarter {
                     Optional<SensorsSnapshotAvro> updatedSnapshot = aggregator.updateState(event);
 
                     updatedSnapshot.ifPresent(snapshot -> {
-                        byte[] snapshotBytes = avroSerializer.serialize(CollectorTopics.TELEMETRY_SNAPSHOTS_V1_TOPIC, snapshot);
+                        byte[] snapshotBytes = avroSerializer.serialize(TELEMETRY_SNAPSHOTS_V1_TOPIC, snapshot);
 
                         ProducerRecord<String, byte[]> producerRecord = new ProducerRecord<>(
-                                CollectorTopics.TELEMETRY_SNAPSHOTS_V1_TOPIC,
+                                TELEMETRY_SNAPSHOTS_V1_TOPIC,
                                 snapshot.getHubId(),
                                 snapshotBytes
                         );
