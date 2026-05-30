@@ -1,6 +1,5 @@
 package aggregator.client;
 
-import aggregator.serializer.SensorEventDeserializer;
 import jakarta.annotation.PreDestroy;
 import org.apache.kafka.clients.consumer.Consumer;
 import org.apache.kafka.clients.consumer.ConsumerConfig;
@@ -13,6 +12,7 @@ import org.apache.kafka.common.serialization.StringDeserializer;
 import org.apache.kafka.common.serialization.StringSerializer;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
+import ru.yandex.practicum.SensorEventDeserializer;
 import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 
 import java.util.Properties;
@@ -21,7 +21,7 @@ import java.util.UUID;
 @Configuration
 public class AggregatorClientConfiguration {
     @Bean
-    AggregatorClient getClient() {
+    public AggregatorClient getClient() {
         return new AggregatorClient() {
             private Producer<String, byte[]> producer;
             private Consumer<String, SensorEventAvro> consumer;
