@@ -1,4 +1,4 @@
-package aggregator.serializer;
+package ru.yandex.practicum;
 
 import org.apache.avro.Schema;
 import org.apache.avro.io.BinaryDecoder;
