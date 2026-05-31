@@ -1,26 +1,28 @@
 package collector.mapper;
 
-import collector.model.enums.DeviceEventType;
-import collector.model.enums.SensorEventType;
-import collector.model.hub.DeviceAction;
-import collector.model.hub.DeviceAddedEvent;
-import collector.model.hub.DeviceRemovedEvent;
-import collector.model.hub.HubEvent;
-import collector.model.hub.ScenarioAddedEvent;
-import collector.model.hub.ScenarioCondition;
-import collector.model.hub.ScenarioRemovedEvent;
-import collector.model.sensor.ClimateSensorEvent;
-import collector.model.sensor.LightSensorEvent;
-import collector.model.sensor.MotionSensorEvent;
-import collector.model.sensor.SensorEvent;
-import collector.model.sensor.SwitchSensorEvent;
-import collector.model.sensor.TemperatureSensorEvent;
 import org.apache.avro.specific.SpecificRecordBase;
 import org.springframework.stereotype.Component;
+import ru.yandex.practicum.grpc.telemetry.event.ClimateSensorProto;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceActionProto;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceAddedEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.DeviceRemovedEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.HubEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.LightSensorProto;
+import ru.yandex.practicum.grpc.telemetry.event.MotionSensorProto;
+import ru.yandex.practicum.grpc.telemetry.event.ScenarioAddedEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.ScenarioConditionProto;
+import ru.yandex.practicum.grpc.telemetry.event.ScenarioRemovedEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.SensorEventProto;
+import ru.yandex.practicum.grpc.telemetry.event.SwitchSensorProto;
+import ru.yandex.practicum.grpc.telemetry.event.TemperatureSensorProto;
+import ru.yandex.practicum.kafka.telemetry.event.ActionTypeAvro;
 import ru.yandex.practicum.kafka.telemetry.event.ClimateSensorAvro;
+import ru.yandex.practicum.kafka.telemetry.event.ConditionOperationAvro;
+import ru.yandex.practicum.kafka.telemetry.event.ConditionTypeAvro;
 import ru.yandex.practicum.kafka.telemetry.event.DeviceActionAvro;
 import ru.yandex.practicum.kafka.telemetry.event.DeviceAddedEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.DeviceRemovedEventAvro;
+import ru.yandex.practicum.kafka.telemetry.event.DeviceTypeAvro;
 import ru.yandex.practicum.kafka.telemetry.event.HubEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.LightSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.MotionSensorAvro;
@@ -31,44 +33,45 @@ import ru.yandex.practicum.kafka.telemetry.event.SensorEventAvro;
 import ru.yandex.practicum.kafka.telemetry.event.SwitchSensorAvro;
 import ru.yandex.practicum.kafka.telemetry.event.TemperatureSensorAvro;
 
+import java.time.Instant;
 import java.util.List;
 
 @Component
 public class CollectorMapper {
-    public SensorEventAvro mapToSensorAvro(SensorEvent event) {
+    public SensorEventAvro mapToSensorAvro(SensorEventProto event) {
         SpecificRecordBase payload;
-        switch (event.getType()) {
-            case SensorEventType.CLIMATE_SENSOR_EVENT -> {
-                ClimateSensorEvent sensorEvent = (ClimateSensorEvent) event;
+        switch (event.getPayloadCase()) {
+            case CLIMATE_SENSOR -> {
+                ClimateSensorProto sensorEvent = event.getClimateSensor();
                 payload = ClimateSensorAvro.newBuilder()
                         .setTemperatureC(sensorEvent.getTemperatureC())
                         .setCo2Level(sensorEvent.getCo2Level())
                         .setHumidity(sensorEvent.getHumidity())
                         .build();
             }
-            case SensorEventType.LIGHT_SENSOR_EVENT -> {
-                LightSensorEvent sensorEvent = (LightSensorEvent) event;
+            case LIGHT_SENSOR -> {
+                LightSensorProto sensorEvent = event.getLightSensor();
                 payload = LightSensorAvro.newBuilder()
                         .setLinkQuality(sensorEvent.getLinkQuality())
                         .setLuminosity(sensorEvent.getLuminosity())
                         .build();
             }
-            case SensorEventType.MOTION_SENSOR_EVENT -> {
-                MotionSensorEvent sensorEvent = (MotionSensorEvent) event;
+            case MOTION_SENSOR -> {
+                MotionSensorProto sensorEvent = event.getMotionSensor();
                 payload = MotionSensorAvro.newBuilder()
                         .setLinkQuality(sensorEvent.getLinkQuality())
-                        .setMotion(sensorEvent.isMotion())
+                        .setMotion(sensorEvent.getMotion())
                         .setVoltage(sensorEvent.getVoltage())
                         .build();
             }
-            case SensorEventType.SWITCH_SENSOR_EVENT -> {
-                SwitchSensorEvent sensorEvent = (SwitchSensorEvent) event;
+            case SWITCH_SENSOR -> {
+                SwitchSensorProto sensorEvent = event.getSwitchSensor();
                 payload = SwitchSensorAvro.newBuilder()
-                        .setState(sensorEvent.isState())
+                        .setState(sensorEvent.getState())
                         .build();
             }
-            case SensorEventType.TEMPERATURE_SENSOR_EVENT -> {
-                TemperatureSensorEvent sensorEvent = (TemperatureSensorEvent) event;
+            case TEMPERATURE_SENSOR -> {
+                TemperatureSensorProto sensorEvent = event.getTemperatureSensor();
                 payload = TemperatureSensorAvro.newBuilder()
                         .setTemperatureC(sensorEvent.getTemperatureC())
                         .setTemperatureF(sensorEvent.getTemperatureF())
@@ -80,34 +83,36 @@ public class CollectorMapper {
         return SensorEventAvro.newBuilder()
                 .setId(event.getId())
                 .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp())
+                .setTimestamp(Instant.ofEpochSecond(
+                        event.getTimestamp().getSeconds(),
+                        event.getTimestamp().getNanos()))
                 .setPayload(payload)
                 .build();
     }
 
-    public HubEventAvro mapToHubAvro(HubEvent event) {
+    public HubEventAvro mapToHubAvro(HubEventProto proto) {
         SpecificRecordBase payload;
-        switch (event.getType()) {
-            case DeviceEventType.DEVICE_ADDED -> {
-                DeviceAddedEvent deviceAddedEvent = (DeviceAddedEvent) event;
+        switch (proto.getPayloadCase()) {
+            case DEVICE_ADDED -> {
+                DeviceAddedEventProto deviceAddedEvent = proto.getDeviceAdded();
                 payload = DeviceAddedEventAvro.newBuilder()
                         .setId(deviceAddedEvent.getId())
-                        .setType(deviceAddedEvent.getDeviceType())
+                        .setType(DeviceTypeAvro.valueOf(deviceAddedEvent.getType().name()))
                         .build();
             }
-            case DeviceEventType.DEVICE_REMOVED -> {
-                DeviceRemovedEvent deviceRemovedEvent = (DeviceRemovedEvent) event;
+            case DEVICE_REMOVED -> {
+                DeviceRemovedEventProto deviceRemovedEvent = proto.getDeviceRemoved();
                 payload = DeviceRemovedEventAvro.newBuilder()
                         .setId(deviceRemovedEvent.getId())
                         .build();
             }
-            case DeviceEventType.SCENARIO_ADDED -> {
-                ScenarioAddedEvent scenarioAddedEvent = (ScenarioAddedEvent) event;
-                List<DeviceActionAvro> actions = scenarioAddedEvent.getActions()
+            case SCENARIO_ADDED -> {
+                ScenarioAddedEventProto scenarioAddedEvent = proto.getScenarioAdded();
+                List<DeviceActionAvro> actions = scenarioAddedEvent.getActionList()
                         .stream()
                         .map(this::mapDeviceActionAvro)
                         .toList();
-                List<ScenarioConditionAvro> conditions = scenarioAddedEvent.getConditions()
+                List<ScenarioConditionAvro> conditions = scenarioAddedEvent.getConditionList()
                         .stream()
                         .map(this::mapScenarioCondition)
                         .toList();
@@ -117,35 +122,43 @@ public class CollectorMapper {
                         .setConditions(conditions)
                         .build();
             }
-            case DeviceEventType.SCENARIO_REMOVED -> {
-                ScenarioRemovedEvent scenarioRemovedEvent = (ScenarioRemovedEvent) event;
+            case SCENARIO_REMOVED -> {
+                ScenarioRemovedEventProto scenarioRemovedEvent = proto.getScenarioRemoved();
                 payload = ScenarioRemovedEventAvro.newBuilder()
                         .setName(scenarioRemovedEvent.getName())
                         .build();
             }
-            default -> throw new IllegalArgumentException("Неизвестное событие хаба: " + event);
+            default -> throw new IllegalArgumentException("Неизвестное событие хаба: " + proto);
         }
         return HubEventAvro.newBuilder()
-                .setHubId(event.getHubId())
-                .setTimestamp(event.getTimestamp())
+                .setHubId(proto.getHubId())
+                .setTimestamp(Instant.ofEpochSecond(
+                        proto.getTimestamp().getSeconds(),
+                        proto.getTimestamp().getNanos()))
                 .setPayload(payload)
                 .build();
     }
 
-    private DeviceActionAvro mapDeviceActionAvro(DeviceAction action) {
+    private DeviceActionAvro mapDeviceActionAvro(DeviceActionProto action) {
         return DeviceActionAvro.newBuilder()
                 .setSensorId(action.getSensorId())
-                .setType(action.getType())
+                .setType(ActionTypeAvro.valueOf(action.getType().name()))
                 .setValue(action.getValue())
                 .build();
     }
 
-    private ScenarioConditionAvro mapScenarioCondition(ScenarioCondition condition) {
-        return ScenarioConditionAvro.newBuilder()
+    private ScenarioConditionAvro mapScenarioCondition(ScenarioConditionProto condition) {
+        ScenarioConditionAvro.Builder conditionBuilder = ScenarioConditionAvro.newBuilder()
                 .setSensorId(condition.getSensorId())
-                .setOperation(condition.getOperation())
-                .setValue(condition.getValue())
-                .setType(condition.getType())
-                .build();
+                .setOperation(ConditionOperationAvro.valueOf(condition.getOperation().name()))
+                .setType(ConditionTypeAvro.valueOf(condition.getType().name()));
+
+        switch (condition.getValueCase()) {
+            case BOOL_VALUE -> conditionBuilder.setValue(condition.getBoolValue());
+            case INT_VALUE -> conditionBuilder.setValue(condition.getIntValue());
+            case VALUE_NOT_SET -> throw new IllegalArgumentException("Значение условия сценария не задано");
+        }
+
+        return conditionBuilder.build();
     }
 }
