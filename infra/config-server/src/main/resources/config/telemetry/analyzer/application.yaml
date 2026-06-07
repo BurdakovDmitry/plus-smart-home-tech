@@ -1,0 +1,29 @@
+grpc:
+  client:
+    hub-router:
+      address: "static://localhost:59090"
+      enable-keep-alive: true
+      keep-alive-without-calls: true
+      negotiation-type: "plaintext"
+
+spring:
+  application:
+    name: "analyzer"
+
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: "jdbc:postgresql://localhost:5432/analyzer_db"
+    username: user
+    password: password
+
+  sql:
+    init:
+      mode: always
+
+  jpa:
+    show-sql: true
+    hibernate:
+      ddl-auto: "none"
+    properties:
+      hibernate:
+        format_sql: true
