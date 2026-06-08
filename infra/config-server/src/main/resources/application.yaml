@@ -1,0 +1,22 @@
+server:
+  port: 0
+
+spring:
+  application:
+    name: "config-server"
+
+  profiles:
+    active: "native"
+
+  cloud:
+    config:
+      server:
+        native:
+          searchLocations: "classpath:config/telemetry/{application}"
+
+eureka:
+  client:
+    register-with-eureka: true
+    fetch-registry: true
+    service-url:
+      defaultZone: http://localhost:8761/eureka/
