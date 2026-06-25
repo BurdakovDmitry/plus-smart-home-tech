@@ -7,6 +7,7 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.validation.annotation.Validated;
 import org.springframework.web.bind.annotation.GetMapping;
+import org.springframework.web.bind.annotation.ModelAttribute;
 import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.PutMapping;
@@ -67,7 +68,7 @@ public class ProductController {
     }
 
     @PostMapping("/quantityState")
-    Boolean updateStateProduct(@Valid @RequestBody SetProductQuantityStateRequest quantityState) {
+    Boolean updateStateProduct(@Valid @ModelAttribute SetProductQuantityStateRequest quantityState) {
         log.info("POST /api/v1/shopping-store/quantityState: {}", quantityState);
         return productService.updateStateProduct(quantityState);
     }
