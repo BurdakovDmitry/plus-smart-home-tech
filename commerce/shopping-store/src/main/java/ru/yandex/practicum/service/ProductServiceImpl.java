@@ -12,6 +12,7 @@ import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.dto.store.PageProductDto;
 import ru.yandex.practicum.dto.store.ProductDto;
 import ru.yandex.practicum.dto.store.ProductParamDto;
+import ru.yandex.practicum.dto.store.ProductState;
 import ru.yandex.practicum.dto.store.SetProductQuantityStateRequest;
 import ru.yandex.practicum.entity.Product;
 import ru.yandex.practicum.entity.QProduct;
@@ -59,7 +60,9 @@ public class ProductServiceImpl implements ProductService {
 
         // Строим динамический QueryDSL
         QProduct qProduct = QProduct.product;
-        BooleanExpression predicate = qProduct.productCategory.eq(param.category());
+        BooleanExpression predicate = param.category() != null
+                ? qProduct.productCategory.eq(param.category())
+                : qProduct.productCategory.isNotNull();
 
         Page<Product> productPage = productRepository.findAll(predicate, pageable);
 
@@ -108,13 +111,16 @@ public class ProductServiceImpl implements ProductService {
     @Override
     @Transactional
     public Boolean removeProduct(UUID productId) {
-        if (!productRepository.existsById(productId)) {
-            log.warn("Товар с id={} не найден", productId);
+        Product product = productRepository.findById(productId).orElse(null);
+        if (product == null) {
+            log.warn("Товар с id={} не найден для деактивации", productId);
             return false;
         }
 
-        productRepository.deleteById(productId);
-        log.info("Товар успешно удален с id={}", productId);
+        product.setProductState(ProductState.DEACTIVATE);
+        productRepository.save(product);
+
+        log.info("Товар успешно деактивирован с id={}", productId);
         return true;
     }
 
