@@ -39,12 +39,25 @@ public class ProductServiceImpl implements ProductService {
 
         if (param.sort() != null && !param.sort().isEmpty()) {
             for (String sortParam : param.sort()) {
+                if (sortParam == null || sortParam.trim().isEmpty()) {
+                    continue;
+                }
+
                 String[] parts = sortParam.split(",");
+
+                if (parts.length == 0) {
+                    continue;
+                }
+
                 String property = parts[0].trim();
+
+                if (property.isEmpty()) {
+                    continue;
+                }
 
                 Sort.Direction direction = Sort.Direction.ASC;
 
-                if (parts.length > 1) {
+                if (parts.length > 1 && parts[1] != null) {
                     String directionStr = parts[1].trim();
                     if ("desc".equalsIgnoreCase(directionStr)) {
                         direction = Sort.Direction.DESC;
@@ -60,11 +73,14 @@ public class ProductServiceImpl implements ProductService {
 
         // Строим динамический QueryDSL
         QProduct qProduct = QProduct.product;
-        BooleanExpression predicate = param.category() != null
-                ? qProduct.productCategory.eq(param.category())
-                : qProduct.productCategory.isNotNull();
 
-        Page<Product> productPage = productRepository.findAll(predicate, pageable);
+        BooleanExpression predicate = param.category() != null
+                ? QProduct.product.productCategory.eq(param.category())
+                : null;
+
+        Page<Product> productPage = predicate != null
+                ? productRepository.findAll(predicate, pageable)
+                : productRepository.findAll(pageable);
 
         log.info("Получен список продуктов по указанным фильтрам");
         return productMapper.mapToPageProductDto(productPage);
