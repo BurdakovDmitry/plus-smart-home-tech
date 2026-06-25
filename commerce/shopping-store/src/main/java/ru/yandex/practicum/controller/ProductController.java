@@ -33,7 +33,7 @@ public class ProductController {
     private final ProductService productService;
 
     @GetMapping
-    PageProductDto getProduct(@RequestParam ProductCategory category,
+    PageProductDto getProduct(@RequestParam(required = false) ProductCategory category,
                               @PositiveOrZero @RequestParam(defaultValue = "0") int page,
                               @Positive @RequestParam(defaultValue = "20") int size,
                               @RequestParam(required = false) List<String> sort) {
