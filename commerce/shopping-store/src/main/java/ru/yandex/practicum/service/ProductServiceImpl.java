@@ -4,9 +4,6 @@ import com.querydsl.core.types.dsl.BooleanExpression;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.data.domain.Page;
-import org.springframework.data.domain.PageRequest;
-import org.springframework.data.domain.Pageable;
-import org.springframework.data.domain.Sort;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import ru.yandex.practicum.dto.store.PageProductDto;
@@ -20,8 +17,6 @@ import ru.yandex.practicum.exception.ProductNotFoundException;
 import ru.yandex.practicum.mapper.ProductMapper;
 import ru.yandex.practicum.repository.ProductRepository;
 
-import java.util.ArrayList;
-import java.util.List;
 import java.util.UUID;
 
 @Slf4j
@@ -32,55 +27,11 @@ public class ProductServiceImpl implements ProductService {
     private final ProductRepository productRepository;
     private final ProductMapper productMapper;
 
-
     @Override
     public PageProductDto getProduct(ProductParamDto param) {
-        List<Sort.Order> orders = new ArrayList<>();
+        BooleanExpression predicate = QProduct.product.productCategory.eq(param.category());
 
-        if (param.sort() != null && !param.sort().isEmpty()) {
-            for (String sortParam : param.sort()) {
-                if (sortParam == null || sortParam.trim().isEmpty()) {
-                    continue;
-                }
-
-                String[] parts = sortParam.split(",");
-
-                if (parts.length == 0) {
-                    continue;
-                }
-
-                String property = parts[0].trim();
-
-                if (property.isEmpty()) {
-                    continue;
-                }
-
-                Sort.Direction direction = Sort.Direction.ASC;
-
-                if (parts.length > 1 && parts[1] != null) {
-                    String directionStr = parts[1].trim();
-                    if ("desc".equalsIgnoreCase(directionStr)) {
-                        direction = Sort.Direction.DESC;
-                    }
-                }
-
-                orders.add(new Sort.Order(direction, property));
-            }
-        }
-
-        Pageable pageable = PageRequest.of(param.page(), param.size(), orders.isEmpty() ? Sort.unsorted() : Sort.by(orders)
-        );
-
-        // Строим динамический QueryDSL
-        QProduct qProduct = QProduct.product;
-
-        BooleanExpression predicate = param.category() != null
-                ? QProduct.product.productCategory.eq(param.category())
-                : null;
-
-        Page<Product> productPage = predicate != null
-                ? productRepository.findAll(predicate, pageable)
-                : productRepository.findAll(pageable);
+        Page<Product> productPage = productRepository.findAll(predicate, param.pageable());
 
         log.info("Получен список продуктов по указанным фильтрам");
         return productMapper.mapToPageProductDto(productPage);

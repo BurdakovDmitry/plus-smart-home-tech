@@ -1,10 +1,8 @@
 package ru.yandex.practicum.dto.store;
 
-import java.util.List;
+import org.springframework.data.domain.Pageable;
 
 public record ProductParamDto(
         ProductCategory category,
-        int page,
-        int size,
-        List<String> sort
+        Pageable pageable
 ) {}
