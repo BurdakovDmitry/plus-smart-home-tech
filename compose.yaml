@@ -1,5 +1,5 @@
 services:
-  postgres:
+  analyzer-db:
     image: postgres:16.1
     ports:
       - "5432:5432"
@@ -13,17 +13,98 @@ services:
       interval: 5s
       retries: 10
 
+  store-db:
+    image: postgres:16.1
+    ports:
+      - "5433:5432"
+    environment:
+      - POSTGRES_DB=store_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d store_db -U user" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  cart-db:
+    image: postgres:16.1
+    ports:
+      - "5434:5432"
+    environment:
+      - POSTGRES_DB=cart_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d cart_db -U user" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
+  warehouse-db:
+    image: postgres:16.1
+    ports:
+      - "5435:5432"
+    environment:
+      - POSTGRES_DB=warehouse_db
+      - POSTGRES_USER=user
+      - POSTGRES_PASSWORD=password
+    healthcheck:
+      test: [ "CMD-SHELL", "pg_isready -q -d warehouse_db -U user" ]
+      timeout: 5s
+      interval: 5s
+      retries: 10
+
   analyzer:
     build: telemetry/analyzer
     ports:
       - "8080:8080"
     depends_on:
-      postgres:
+      analyzer-db:
         condition: service_healthy
       kafka:
         condition: service_started
     environment:
-      - SPRING_DATASOURCE_URL=jdbc:postgresql://postgres:5432/analyzer_db
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://analyzer-db:5432/analyzer_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+
+  shopping-store:
+    build: commerce/shopping-store
+    depends_on:
+      store-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://store-db:5432/store_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+
+  shopping-cart:
+    build: commerce/shopping-cart
+    depends_on:
+      cart-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://cart-db:5432/cart_db
+      - SPRING_DATASOURCE_USERNAME=user
+      - SPRING_DATASOURCE_PASSWORD=password
+      - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
+
+  warehouse:
+    build: commerce/warehouse
+    depends_on:
+      warehouse-db:
+        condition: service_healthy
+      kafka:
+        condition: service_started
+    environment:
+      - SPRING_DATASOURCE_URL=jdbc:postgresql://warehouse-db:5432/warehouse_db
       - SPRING_DATASOURCE_USERNAME=user
       - SPRING_DATASOURCE_PASSWORD=password
       - SPRING_KAFKA_BOOTSTRAP_SERVERS=kafka:29092
@@ -54,11 +135,11 @@ services:
     command: "bash -c \
                 'kafka-topics --create --topic telemetry.sensors.v1 \
                              --partitions 1 --replication-factor 1 --if-not-exists \
-                             --bootstrap-controller kafka:29092 && \
+                             --bootstrap-server kafka:29092 && \
                 kafka-topics --create --topic telemetry.snapshots.v1 \
                              --partitions 1 --replication-factor 1 --if-not-exists \
-                             --bootstrap-controller kafka:29092 && \
+                             --bootstrap-server kafka:29092 && \
                 kafka-topics --create --topic telemetry.hubs.v1 \
                              --partitions 1 --replication-factor 1 --if-not-exists \
-                             --bootstrap-controller kafka:29092'"
+                             --bootstrap-server kafka:29092'"
     init: true
